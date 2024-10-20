@@ -1,0 +1,142 @@
+﻿@model IList<EventViewModel>
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> _signInManager
+@inject UserManager<IdentityUser> _userManager
+@{
+    ViewData["Title"] = "Invited Events";
+}
+
+@{
+    var user = await _userManager.GetUserAsync(User);
+    var email = user != null ? user.Email : "";
+}
+
+<div class="container mt-5">
+    <!-- No Invitations Case -->
+    @if (Model.Count == 0)
+    {
+        <div class="row justify-content-center">
+            <div class="col-md-8 text-center">
+                <h3 class="text-info">You have not been invited to any events yet.</h3>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Page Heading -->
+        <div class="row justify-content-center">
+            <div class="col-md-10 text-center">
+                <h1 class="display-4 mb-4">Events You Are Invited To</h1>
+            </div>
+        </div>
+
+        <!-- Nav Tabs -->
+        <div class="row">
+            <div class="col-md-12">
+                <ul class="nav nav-tabs justify-content-center" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab" aria-controls="upcoming" aria-selected="false">
+                            <i class="bi bi-calendar-event"></i> Upcoming Events
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="past-tab" data-bs-toggle="tab" data-bs-target="#past" type="button" role="tab" aria-controls="past" aria-selected="true">
+                            <i class="bi bi-calendar-check"></i> Past Events
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="myTabContent">
+            <!-- Past Events Tab -->
+            <div class="tab-pane fade show active" id="past" role="tabpanel" aria-labelledby="past-tab">
+                <div class="row pt-4">
+                    @if (!Model.Any(e => e.InviteByEmail != null && e.InviteByEmail.Split(',').Contains(email) && e.Date < DateTime.Now))
+                    {
+                        <div class="col text-center">
+                            <p class="text-muted">No past events found.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        var pastEvents = Model
+                            .Where(e => e.InviteByEmail != null && e.InviteByEmail.Split(',').Contains(email) && e.Date < DateTime.Now)
+                            .OrderByDescending(e => e.Date) // Order past events by date descending
+                            .ToList();
+
+                        int eventIterator = 0;
+                        foreach (var bookEvent in pastEvents)
+                        {
+                            ViewData["PositionFromStart"] = ++eventIterator;
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card shadow-sm h-100 border-light">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="card-title">@bookEvent.Title</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text">
+                                            <strong>Date:</strong> @bookEvent.Date.ToString("MMM dd, yyyy") <br />
+                                            <strong>Start Time:</strong> @bookEvent.StartTime.ToString("hh:mm tt") <br />
+                                            <strong>Location:</strong> @bookEvent.Location <br />
+                                            <strong>Type:</strong> <span class="badge @(bookEvent.Type == "Public" ? "bg-success" : "bg-secondary")">@bookEvent.Type</span> <br />
+                                            <strong>Description:</strong> @bookEvent.Description
+                                        </p>
+                                    </div>
+                                    <div class="card-footer text-center">
+                                        <a href="@Url.Action("Details", "Event", new { id = bookEvent.Id })" class="btn btn-primary">View Details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- Upcoming Events Tab -->
+            <div class="tab-pane fade" id="upcoming" role="tabpanel" aria-labelledby="upcoming-tab">
+                <div class="row pt-4">
+                    @if (!Model.Any(e => e.InviteByEmail != null && e.InviteByEmail.Split(',').Contains(email) && e.Date > DateTime.Now))
+                    {
+                        <div class="col text-center">
+                            <p class="text-muted">No upcoming events found.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        var upcomingEvents = Model
+                            .Where(e => e.InviteByEmail != null && e.InviteByEmail.Split(',').Contains(email) && e.Date > DateTime.Now)
+                            .OrderBy(e => e.Date) // Order upcoming events by date ascending
+                            .ToList();
+
+                        int eventIterator = 0;
+                        foreach (var bookEvent in upcomingEvents)
+                        {
+                            ViewData["PositionFromStart"] = ++eventIterator;
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card shadow-sm h-100 border-light">
+                                    <div class="card-header bg-success text-white">
+                                        <h5 class="card-title">@bookEvent.Title</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text">
+                                            <strong>Date:</strong> @bookEvent.Date.ToString("MMM dd, yyyy") <br />
+                                            <strong>Start Time:</strong> @bookEvent.StartTime.ToString("hh:mm tt") <br />
+                                            <strong>Location:</strong> @bookEvent.Location <br />
+                                            <strong>Type:</strong> <span class="badge @(bookEvent.Type == "Public" ? "bg-success" : "bg-secondary")">@bookEvent.Type</span> <br />
+                                            <strong>Description:</strong> @bookEvent.Description
+                                        </p>
+                                    </div>
+                                    <div class="card-footer text-center">
+                                        <a href="@Url.Action("Details", "Event", new { id = bookEvent.Id })" class="btn btn-success">View Details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
